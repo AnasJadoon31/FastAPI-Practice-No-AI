@@ -4,10 +4,7 @@ from typing import Any
 
 app = FastAPI()
 
-class_id = 0
-
-teachers = {
-    {
+teachers: dict[int, dict] = {
     1: {
         "name": "Anas",
         "age": 35,
@@ -75,7 +72,6 @@ teachers = {
         "degree": ["BS(CS)"]
     }
 }
-}
 
 # As we are using path parameters in the next route, we need to define the static route before the dynamic one so that interpreter reads
 # the static one without giving the error when both predecessing paths are same
@@ -85,57 +81,11 @@ def get_teachers():
 
 @app.get("/teachers/{teacher_id}")
 # Adding type hinting will automatically manages the validation for dynamic endpoints, as well as for the return types
-def get_teacher(teacher_id: int) -> dict[str, Any]:
-    # We are using global because python doesn't allow to modify the global variables without global keyword
-    global class_id
-    class_id += 1
-    return {
-        "id": teacher_id,
-        "name": "Dr. Raheel Siddiqui",
-        "designation": "Associate Professor",
-        "age": "45",
-        "weekly_classes": {
-            "Monday": [
-                {
-                    "class_id": class_id,
-                    "time_24_hrs": "09:30",
-                    "duration_hrs": "2",
-                    "subject": "DSA",
-                    "class": "BS(CS) 4-B",
-                    "room": "E-209",
-                },
-                {
-                    "class_id": class_id,
-                    "time_24_hrs": "11:30",
-                    "duration_hrs": "2",
-                    "subject": "DSA",
-                    "class": "BS(CS) 4-B",
-                    "room": "E-209",
-                },
-            ],
-            "Tuesday": [
-                {
-                    "class_id": class_id,
-                    "time_24_hrs": "09:30",
-                    "duration_hrs": "2",
-                    "subject": "DSA",
-                    "class": "BS(CS) 4-B",
-                    "room": "E-209",
-                }
-            ],
-            "Wednesday": [
-                {
-                    "class_id": class_id,
-                    "time_24_hrs": "09:30",
-                    "duration_hrs": "2",
-                    "subject": "DSA",
-                    "class": "BS(CS) 4-B",
-                    "room": "E-209",
-                }
-            ],
-        },
-    }
-
+def get_teacher(teacher_id: int) -> dict[str, Any] | str:
+    if teacher_id in teachers:
+        return teachers[teacher_id] 
+    else:
+        return "404 not found"
 
 @app.get("/scalar")
 def get_scalar():
