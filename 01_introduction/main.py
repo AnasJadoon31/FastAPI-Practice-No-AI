@@ -1,92 +1,255 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from scalar_fastapi import get_scalar_api_reference
+import uvicorn
 from typing import Any
+from pydantic import BaseModel
 
 app = FastAPI()
 
-teachers: dict[int, dict] = {
-    1: {
+teachers: list[dict] = [
+    {
+        "id": 1,
         "name": "Anas",
         "age": 35,
         "experience_years": 15,
-        "degree": ["BS(CS)", "MS(Cyber)"]
+        "degree": ["BS(CS)", "MS(Cyber)"],
     },
-    2: {
-        "name": "Hamza",
-        "age": 24,
-        "experience_years": 2,
-        "degree": ["BS(SE)"]
-    },
-    3: {
+    {"id": 2, "name": "Hamza", "age": 24, "experience_years": 2, "degree": ["BS(SE)"]},
+    {
+        "id": 3,
         "name": "Ayesha",
         "age": 29,
         "experience_years": 5,
-        "degree": ["BS(CS)", "MS(DS)"]
+        "degree": ["BS(CS)", "MS(DS)"],
     },
-    4: {
+    {
+        "id": 4,
         "name": "Bilal",
         "age": 35,
         "experience_years": 12,
-        "degree": ["BS(IT)", "MS(CS)", "PhD(AI)"]
+        "degree": ["BS(IT)", "MS(CS)", "PhD(AI)"],
     },
-    5: {
+    {
+        "id": 5,
         "name": "Fatima",
         "age": 26,
         "experience_years": 3,
-        "degree": ["BS(CS)", "MS(Cyber)"]
+        "degree": ["BS(CS)", "MS(Cyber)"],
     },
-    6: {
+    {
+        "id": 6,
         "name": "Zain",
         "age": 42,
         "experience_years": 18,
-        "degree": ["BS(CS)", "MBA"]
+        "degree": ["BS(CS)", "MBA"],
     },
-    7: {
+    {
+        "id": 7,
         "name": "Sara",
         "age": 31,
         "experience_years": 8,
-        "degree": ["BS(AI)", "MS(AI)"]
+        "degree": ["BS(AI)", "MS(AI)"],
     },
-    8: {
-        "name": "Omar",
-        "age": 23,
-        "experience_years": 1,
-        "degree": ["BS(CS)"]
-    },
-    9: {
+    {"id": 8, "name": "Omar", "age": 23, "experience_years": 1, "degree": ["BS(CS)"]},
+    {
+        "id": 9,
         "name": "Khadija",
         "age": 28,
         "experience_years": 4,
-        "degree": ["BS(IT)", "MS(SE)"]
+        "degree": ["BS(IT)", "MS(SE)"],
     },
-    10: {
+    {
+        "id": 10,
         "name": "Ali",
         "age": 33,
         "experience_years": 9,
-        "degree": ["BS(SE)", "MS(CS)"]
+        "degree": ["BS(SE)", "MS(CS)"],
     },
-    11: {
+    {
+        "id": 11,
         "name": "Mariam",
         "age": 27,
         "experience_years": 4,
-        "degree": ["BS(CS)"]
-    }
-}
+        "degree": ["BS(CS)"],
+    },
+]
+
+# We can create a base model/class using pydantic which will allow fastapi to do the validation according to the model on its own
+
+class Teacher(BaseModel):
+    id: int
+    name: str
+    age: int
+    experience_years: int
+    degree: list[str]
+
+
+
+def search_teacher(id: int):
+    for teacher in teachers:
+        if teacher["id"] == id:
+            return teacher
+    return 0
+
 
 # As we are using path parameters in the next route, we need to define the static route before the dynamic one so that interpreter reads
 # the static one without giving the error when both predecessing paths are same
 @app.get("/teachers/all")
-def get_teachers():
-    return teachers
+# If we add an argument to the function and that is not a path parimiter, it automatically becomes a query parameter
+# which can be accessed like /teachers/all?sort:asc
+def get_teachers(sort: str | None = None):
+    teacher_names: list[str] = []
+
+    for teacher in teachers:
+        teacher_names.append(teacher["name"])
+
+    if sort == "asc":
+        sorted_teacher_names = sorted(teacher_names)
+        return sorted_teacher_names
+
+    elif sort == "desc":
+        sorted_teacher_names = sorted(teacher_names, reverse=True)
+        return sorted_teacher_names
+
+    else:
+        return teachers
+
 
 @app.get("/teachers/{teacher_id}")
 # Adding type hinting will automatically manages the validation for dynamic endpoints, as well as for the return types
-def get_teacher(teacher_id: int) -> dict[str, Any] | str:
-    if teacher_id in teachers:
-        return teachers[teacher_id] 
-    else:
-        return "404 not found"
+def get_teacher(teacher_id: int):
+    return search_teacher(teacher_id)
+
+
+@app.post("/teachers")
+# The degree won't get uploaded because when we are posting data like this, we post it using queries,
+# and quries don't support lists
+# def add_teacher(name: str, age: int, experience_years: int, degree: list[str]):
+#     id = max(teachers.keys()) + 1
+
+#     if experience_years >= 5:
+#         teachers[id] = {
+#             "name": name,
+#             "age": age,
+#             "experience_years": experience_years,
+#             "degree": degree,
+#         }
+#         return teachers[id]
+
+#     else:
+#         raise HTTPException(
+#             status_code=400, detail="Teacher experience is less than 5 years"
+#         )
+
+# We can also use dict here
+# def add_teacher(data: dict):
+#     teacher_id = (teachers[len(teachers)-1]["id"]) + 1
+
+#     teachers.append(
+#         {
+#             "id": teacher_id,
+#             "name": data["name"],
+#             "age": data["age"],
+#             "experience_years": data["experience_years"],
+#             "degree": data["degree"],
+#         }
+#     )
+
+#     return teachers[len(teachers)-1]
+
+def add_teacher(data: dict):
+    teacher_id = (teachers[len(teachers)-1]["id"]) + 1
+
+    teachers.append(
+        {
+            "id": teacher_id,
+            "name": data["name"],
+            "age": data["age"],
+            "experience_years": data["experience_years"],
+            "degree": data["degree"],
+        }
+    )
+
+    return teachers[len(teachers)-1]
+
+
+# Put method is used to completely replace an entry from the data with the new data
+# @app.put("/teachers/{teacher_id}")
+# def update_teacher(teacher_id: int, data: dict):
+#     teachers[teacher_id] = {
+#         "name": data["name"],
+#         "age": data["age"],
+#         "experience_years": data["experience_years"],
+#         "degree": data["degree"]
+#     }
+#     return teachers[teacher_id]
+
+
+# We can do it using query parameters as well
+@app.put("/teachers/{teacher_id}")  
+def update_teacher(
+    teacher_id: int, name: str, age: int, experience_years: int, degree: str
+):
+    for index, teacher in enumerate(teachers):
+        if teacher["id"] == teacher_id:
+            teachers[index] = {
+                "id": teacher_id,
+                "name": name,
+                "age": age,
+                "experience_years": experience_years,
+                "degree": degree,
+            }
+            return teachers[index]
+    raise HTTPException(
+        status_code=400, detail=f"Teacher with id {teacher_id} not found"
+    )
+
+
+# We use patch method if we want to update only some specific fields, not the whole entry
+@app.patch("/teachers/{teacher_id}")
+def patch_teacher(
+    teacher_id: int,
+    # name: str | None = None,
+    # age: int | None = None,
+    # experience_years: int | None = None,
+    # degree: str | None = None
+    data: dict[str, Any],
+):
+    # if name:
+    #     teachers[teacher_id]["name"] = name
+    # if age:
+    #     teachers[teacher_id]["age"] = age
+    # if experience_years:
+    #     teachers[teacher_id]["experience_years"] = experience_years
+    # if degree:
+    #     teachers[teacher_id]["degree"] = degree
+
+    # We can use append method as well instead of using if statements
+    # teachers.append(data)
+    # return teachers[teacher_id]
+
+    for index, teacher in enumerate(teachers):
+        if teacher["id"] == teacher_id:
+            if "id" in data:
+                raise HTTPException(status_code=400, detail="Id is not editable")
+            teachers[index].update(data)
+            return teachers[index]
+
+
+@app.delete("/teachers/{teacher_id}")
+def delete_teacher(teacher_id: int):
+    for index, teacher in enumerate(teachers):
+        if teacher["id"] == teacher_id:
+            teachers.pop(index)
+            return f"Teacher with id {teacher_id} deleted"
+    raise HTTPException(
+        status_code=400,
+        detail=f"Teacher with id {teacher_id} not found"
+    )
 
 @app.get("/scalar")
 def get_scalar():
     return get_scalar_api_reference(openapi_url=app.openapi_url, title="Documentation")
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
