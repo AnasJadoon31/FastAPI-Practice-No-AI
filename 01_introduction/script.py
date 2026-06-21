@@ -1,0 +1,76 @@
+import random
+
+
+teachers: list[dict] = [
+    {
+        "id": 1,
+        "name": "Anas",
+        "age": 35,
+        "experience_years": 15,
+        "degree": ["BS(CS)", "MS(Cyber)"],
+    },
+    {"id": 2, "name": "Hamza", "age": 24, "experience_years": 2, "degree": ["BS(SE)"]},
+    {
+        "id": 3,
+        "name": "Ayesha",
+        "age": 29,
+        "experience_years": 5,
+        "degree": ["BS(CS)", "MS(DS)"],
+    },
+    {
+        "id": 4,
+        "name": "Bilal",
+        "age": 35,
+        "experience_years": 12,
+        "degree": ["BS(IT)", "MS(CS)", "PhD(AI)"],
+    },
+    {
+        "id": 5,
+        "name": "Fatima",
+        "age": 26,
+        "experience_years": 3,
+        "degree": ["BS(CS)", "MS(Cyber)"],
+    },
+    {
+        "id": 6,
+        "name": "Zain",
+        "age": 42,
+        "experience_years": 18,
+        "degree": ["BS(CS)", "MBA"],
+    },
+    {
+        "id": 7,
+        "name": "Sara",
+        "age": 31,
+        "experience_years": 8,
+        "degree": ["BS(AI)", "MS(AI)"],
+    },
+    {"id": 8, "name": "Omar", "age": 23, "experience_years": 1, "degree": ["BS(CS)"]},
+    {
+        "id": 9,
+        "name": "Khadija",
+        "age": 28,
+        "experience_years": 4,
+        "degree": ["BS(IT)", "MS(SE)"],
+    },
+    {
+        "id": 10,
+        "name": "Ali",
+        "age": 33,
+        "experience_years": 9,
+        "degree": ["BS(SE)", "MS(CS)"],
+    },
+    {
+        "id": 11,
+        "name": "Mariam",
+        "age": 27,
+        "experience_years": 4,
+        "degree": ["BS(CS)"],
+    },
+]
+
+marital_status = ["single", "in_relationship", "married", "divorced"]
+for index, teacher in enumerate(teachers):
+    teacher["marital_status"] = random.choice(marital_status)
+
+print(teachers)
