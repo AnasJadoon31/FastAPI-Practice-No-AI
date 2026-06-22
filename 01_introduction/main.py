@@ -1,108 +1,109 @@
 from fastapi import FastAPI, HTTPException
 from scalar_fastapi import get_scalar_api_reference
 import uvicorn
-from typing import Any
+# from typing import Any
 from app.schemas import (
-    BaseTeacher,
     TeacherAdd,
     TeacherDelete,
     TeacherGet,
     TeacherPatch,
     TeacherUpdate,
 )
+from app.db import save, teachers
 
 app = FastAPI()
 
-teachers: list[dict] = [
-    {
-        "id": 1,
-        "name": "Anas",
-        "age": 35,
-        "experience_years": 15,
-        "degree": ["BS(CS)", "MS(Cyber)"],
-        "marital_status": "single",
-    },
-    {
-        "id": 2,
-        "name": "Hamza",
-        "age": 24,
-        "experience_years": 2,
-        "degree": ["BS(SE)"],
-        "marital_status": "single",
-    },
-    {
-        "id": 3,
-        "name": "Ayesha",
-        "age": 29,
-        "experience_years": 5,
-        "degree": ["BS(CS)", "MS(DS)"],
-        "marital_status": "divorced",
-    },
-    {
-        "id": 4,
-        "name": "Bilal",
-        "age": 35,
-        "experience_years": 12,
-        "degree": ["BS(IT)", "MS(CS)", "PhD(AI)"],
-        "marital_status": "single",
-    },
-    {
-        "id": 5,
-        "name": "Fatima",
-        "age": 26,
-        "experience_years": 3,
-        "degree": ["BS(CS)", "MS(Cyber)"],
-        "marital_status": "married",
-    },
-    {
-        "id": 6,
-        "name": "Zain",
-        "age": 42,
-        "experience_years": 18,
-        "degree": ["BS(CS)", "MBA"],
-        "marital_status": "in_relationship",
-    },
-    {
-        "id": 7,
-        "name": "Sara",
-        "age": 31,
-        "experience_years": 8,
-        "degree": ["BS(AI)", "MS(AI)"],
-        "marital_status": "divorced",
-    },
-    {
-        "id": 8,
-        "name": "Omar",
-        "age": 23,
-        "experience_years": 1,
-        "degree": ["BS(CS)"],
-        "marital_status": "divorced",
-    },
-    {
-        "id": 9,
-        "name": "Khadija",
-        "age": 28,
-        "experience_years": 4,
-        "degree": ["BS(IT)", "MS(SE)"],
-        "marital_status": "divorced",
-    },
-    {
-        "id": 10,
-        "name": "Ali",
-        "age": 33,
-        "experience_years": 9,
-        "degree": ["BS(SE)", "MS(CS)"],
-        "marital_status": "in_relationship",
-    },
-    {
-        "id": 11,
-        "name": "Mariam",
-        "age": 27,
-        "experience_years": 4,
-        "degree": ["BS(CS)"],
-        "marital_status": "married",
-    },
-]
+# Data is now in data.json and is getting loaded using db.py
+# teachers: list[dict] = [
+#     {
+#         "id": 1,
+#         "name": "Anas",
+#         "age": 35,
+#         "experience_years": 15,
+#         "degree": ["BS(CS)", "MS(Cyber)"],
+#         "marital_status": "single",
+#     },
+#     {
+#         "id": 2,
+#         "name": "Hamza",
+#         "age": 24,
+#         "experience_years": 2,
+#         "degree": ["BS(SE)"],
+#         "marital_status": "single",
+#     },
+#     {
+#         "id": 3,
+#         "name": "Ayesha",
+#         "age": 29,
+#         "experience_years": 5,
+#         "degree": ["BS(CS)", "MS(DS)"],
+#         "marital_status": "divorced",
+#     },
+#     {
+#         "id": 4,
+#         "name": "Bilal",
+#         "age": 35,
+#         "experience_years": 12,
+#         "degree": ["BS(IT)", "MS(CS)", "PhD(AI)"],
+#         "marital_status": "single",
+#     },
+#     {
+#         "id": 5,
+#         "name": "Fatima",
+#         "age": 26,
+#         "experience_years": 3,
+#         "degree": ["BS(CS)", "MS(Cyber)"],
+#         "marital_status": "married",
+#     },
+#     {
+#         "id": 6,
+#         "name": "Zain",
+#         "age": 42,
+#         "experience_years": 18,
+#         "degree": ["BS(CS)", "MBA"],
+#         "marital_status": "in_relationship",
+#     },
+#     {
+#         "id": 7,
+#         "name": "Sara",
+#         "age": 31,
+#         "experience_years": 8,
+#         "degree": ["BS(AI)", "MS(AI)"],
+#         "marital_status": "divorced",
+#     },
+#     {
+#         "id": 8,
+#         "name": "Omar",
+#         "age": 23,
+#         "experience_years": 1,
+#         "degree": ["BS(CS)"],
+#         "marital_status": "divorced",
+#     },
+#     {
+#         "id": 9,
+#         "name": "Khadija",
+#         "age": 28,
+#         "experience_years": 4,
+#         "degree": ["BS(IT)", "MS(SE)"],
+#         "marital_status": "divorced",
+#     },
+#     {
+#         "id": 10,
+#         "name": "Ali",
+#         "age": 33,
+#         "experience_years": 9,
+#         "degree": ["BS(SE)", "MS(CS)"],
+#         "marital_status": "in_relationship",
+#     },
+#     {
+#         "id": 11,
+#         "name": "Mariam",
+#         "age": 27,
+#         "experience_years": 4,
+#         "degree": ["BS(CS)"],
+#         "marital_status": "married",
+#     },
+# ]
 
 # We can create a base model/class using pydantic which will allow fastapi to do the validation according to the model on its own
 # class Teacher(BaseModel):
@@ -210,7 +211,7 @@ def add_teacher(teacher: TeacherAdd):
             "marital_status": teacher.marital_status,
         }
     )
-
+    save()
     return teachers[len(teachers) - 1]
 
 
@@ -252,6 +253,7 @@ def update_teacher(teacher_id: int, data: TeacherUpdate):
     for index, teacher in enumerate(teachers):
         if teacher["id"] == teacher_id:
             teacher.update(data.model_dump())
+            save()
             # We need to return teacher separately because it won't work in a single liner
             return teacher
     raise HTTPException(
@@ -278,6 +280,7 @@ def patch_teacher(teacher_id: int, data: TeacherPatch):
     for index, teacher in enumerate(teachers):
         if teacher["id"] == teacher_id:
             teachers[index].update(data.model_dump(exclude_unset=True))
+            save()
             return teachers[index]
 
 
@@ -286,6 +289,7 @@ def delete_teacher(teacher_id: int):
     for index, teacher in enumerate(teachers):
         if teacher["id"] == teacher_id:
             teachers.pop(index)
+            save()
             return {"success": True}
     raise HTTPException(
         status_code=400, detail=f"Teacher with id {teacher_id} not found"
