@@ -132,16 +132,16 @@ db = Database()
 # If we add an argument to the function and that is not a path parimiter, it automatically becomes a query parameter
 # which can be accessed like /teachers?sort:asc
 def get_teachers(sort: str | None = None):
-    teacher_names: list[str] = []
+    teacher_names = []
 
     teacher_names = db.get_teacher_all()
 
     if sort == "asc":
-        sorted_teacher_names = sorted(teacher_names)
+        sorted_teacher_names = sorted(teacher_names, key= lambda t: t["name"])
         return sorted_teacher_names
 
     elif sort == "desc":
-        sorted_teacher_names = sorted(teacher_names, reverse=True)
+        sorted_teacher_names = sorted(teacher_names, key=lambda t: t["name"], reverse=True)
         return sorted_teacher_names
 
     else:

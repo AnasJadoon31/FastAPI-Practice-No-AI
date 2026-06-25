@@ -252,16 +252,16 @@ class Database:
     ):
         data: dict[str, Any] = {}
 
-        if name:
+        if name is not None:
             data["name"] = name
         if age is not None:
             data["age"] = age
         # We are doing is not None because false will return zero if we use if
         if experience_years is not None:
             data["experience_years"] = experience_years
-        if degree:
+        if degree is not None:
             data["degree"] = json.dumps(degree)
-        if marital_status:
+        if marital_status is not None:
             data["marital_status"] = marital_status
 
         set_clauses: list = [f"{column} = :{column}" for column in data.keys()]
