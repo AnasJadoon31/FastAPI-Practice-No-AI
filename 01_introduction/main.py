@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from scalar_fastapi import get_scalar_api_reference
 import uvicorn
+from app.db import Database
+
 # from typing import Any
 from app.schemas import (
     TeacherAdd,
@@ -9,9 +11,11 @@ from app.schemas import (
     TeacherPatch,
     TeacherUpdate,
 )
-from app.db import save, teachers
+# from app.db import save, teachers
 
 app = FastAPI()
+
+db = Database()
 
 # Data is now in data.json and is getting loaded using db.py
 # teachers: list[dict] = [
@@ -115,11 +119,11 @@ app = FastAPI()
 # Moved it to schemas.py where all the models will be present
 
 
-def search_teacher(id: int):
-    for teacher in teachers:
-        if teacher["id"] == id:
-            return teacher
-    return 0
+# def search_teacher(id: int):
+#     for teacher in teachers:
+#         if teacher["id"] == id:
+#             return teacher
+#     return 0
 
 
 # As we are using path parameters in the next route, we need to define the static route before the dynamic one so that interpreter reads
@@ -130,8 +134,7 @@ def search_teacher(id: int):
 def get_teachers(sort: str | None = None):
     teacher_names: list[str] = []
 
-    for teacher in teachers:
-        teacher_names.append(teacher["name"])
+    teacher_names = db.get_teacher_all()
 
     if sort == "asc":
         sorted_teacher_names = sorted(teacher_names)
@@ -142,16 +145,18 @@ def get_teachers(sort: str | None = None):
         return sorted_teacher_names
 
     else:
-        return teachers
+        return teacher_names
 
 
 # We can validate response by adding response_model
 @app.get("/teachers/{teacher_id}", response_model=TeacherGet)
 # Adding type hinting will automatically manages the validation for dynamic endpoints, as well as for the return types
 def get_teacher(teacher_id: int):
-    teacher = search_teacher(teacher_id)
+    # teacher = search_teacher(teacher_id)
 
-    if not teacher:
+    teacher = db.get_teacher(teacher_id)
+
+    if teacher is None:
         raise HTTPException(
             status_code=404, detail=f"Teacher with id {teacher_id} not found"
         )
@@ -199,20 +204,30 @@ def get_teacher(teacher_id: int):
 # Here we will use the pydantic model to get the data
 @app.post("/teachers")
 def add_teacher(teacher: TeacherAdd):
-    teacher_id = (teachers[len(teachers) - 1]["id"]) + 1
+    # teacher_id = (teachers[len(teachers) - 1]["id"]) + 1
 
-    teachers.append(
-        {
-            "id": teacher_id,
-            "name": teacher.name,
-            "age": teacher.age,
-            "experience_years": teacher.experience_years,
-            "degree": teacher.degree,
-            "marital_status": teacher.marital_status,
-        }
+    # teachers.append(
+    #     {
+    #         "id": teacher_id,
+    #         "name": teacher.name,
+    #         "age": teacher.age,
+    #         "experience_years": teacher.experience_years,
+    #         "degree": teacher.degree,
+    #         "marital_status": teacher.marital_status,
+    #     }
+    # )
+    # save()
+    # return teachers[len(teachers) - 1]
+
+    result = db.add_teacher(
+        teacher.name,
+        teacher.age,
+        teacher.experience_years,
+        teacher.degree,
+        teacher.marital_status,
     )
-    save()
-    return teachers[len(teachers) - 1]
+
+    return result
 
 
 # Put method is used to completely replace an entry from the data with the new data
@@ -250,15 +265,26 @@ def add_teacher(teacher: TeacherAdd):
 # Using pydantic model for updating
 @app.put("/teachers/{teacher_id}", response_model=TeacherUpdate)
 def update_teacher(teacher_id: int, data: TeacherUpdate):
-    for index, teacher in enumerate(teachers):
-        if teacher["id"] == teacher_id:
-            teacher.update(data.model_dump())
-            save()
-            # We need to return teacher separately because it won't work in a single liner
-            return teacher
-    raise HTTPException(
-        status_code=404, detail=f"Teacher with id {teacher_id} not found"
+    # for index, teacher in enumerate(teachers):
+    #     if teacher["id"] == teacher_id:
+    #         teacher.update(data.model_dump())
+    #         save()
+    #         # We need to return teacher separately because it won't work in a single liner
+    #         return teacher
+    # raise HTTPException(
+    #     status_code=404, detail=f"Teacher with id {teacher_id} not found"
+    # )
+
+    db.update_teacher(
+        teacher_id,
+        data.name,
+        data.age,
+        data.experience_years,
+        data.degree,
+        data.marital_status,
     )
+
+    return db.get_teacher(teacher_id)
 
 
 # We use patch method if we want to update only some specific fields, not the whole entry
@@ -277,23 +303,38 @@ def patch_teacher(teacher_id: int, data: TeacherPatch):
     # teachers.append(data)
     # return teachers[teacher_id]
 
-    for index, teacher in enumerate(teachers):
-        if teacher["id"] == teacher_id:
-            teachers[index].update(data.model_dump(exclude_unset=True))
-            save()
-            return teachers[index]
+    # for index, teacher in enumerate(teachers):
+    #     if teacher["id"] == teacher_id:
+    #         teachers[index].update(data.model_dump(exclude_unset=True))
+    #         save()
+    #         return teachers[index]
+
+    if db.get_teacher(teacher_id) is None:
+        raise HTTPException(
+            status_code=404, detail=f"Teacher with id {teacher_id} not found"
+        )
+    teacher_data = data.model_dump(exclude_unset=True)
+    db.patch_teacher(teacher_id, **teacher_data)
+    return db.get_teacher(teacher_id)
 
 
 @app.delete("/teachers/{teacher_id}", response_model=TeacherDelete)
 def delete_teacher(teacher_id: int):
-    for index, teacher in enumerate(teachers):
-        if teacher["id"] == teacher_id:
-            teachers.pop(index)
-            save()
-            return {"success": True}
-    raise HTTPException(
-        status_code=400, detail=f"Teacher with id {teacher_id} not found"
-    )
+    # for index, teacher in enumerate(teachers):
+    #     if teacher["id"] == teacher_id:
+    #         teachers.pop(index)
+    #         save()
+    #         return {"success": True}
+    # raise HTTPException(
+    #     status_code=400, detail=f"Teacher with id {teacher_id} not found"
+    # )
+    if db.get_teacher(teacher_id) is None:
+        raise HTTPException(
+            status_code=404, detail=f"Teacher with id {teacher_id} not found"
+        )
+
+    result = db.delete_teacher(teacher_id)
+    return {"success": result}
 
 
 @app.get("/scalar")

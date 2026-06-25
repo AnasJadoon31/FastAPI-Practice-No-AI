@@ -34,6 +34,7 @@ class BaseTeacher(BaseModel):
     experience_years: int = Field(
         description="Experience Years must be less than or equal to 5", ge=5
     )
+    # degree: list[str] = Field(description="Degree List")
     degree: list[str] = Field(description="Degree List")
     marital_status: Enum_Marital_Status = Field(
         description="Marital Status of the teacher"
@@ -42,7 +43,6 @@ class BaseTeacher(BaseModel):
 
 class TeacherAdd(BaseTeacher):
     pass
-
 
 class TeacherGet(BaseTeacher):
     id: int
