@@ -1,16 +1,17 @@
-from enum import Enum
-from typing import Optional
+# from enum import Enum
+#from typing import Optional
 # from random import randint
+from pydantic import BaseModel, Field
+from app.database.models import Enum_Marital_Status
 
-from pydantic import BaseModel, Field, create_model
 
-
+# moved to models.py
 # We can create enums if we want the string to be any of the specified value, not other than that
-class Enum_Marital_Status(str, Enum):
-    single = "single"
-    in_relationship = "in_relationship"
-    married = "married"
-    divorced = "divorced"
+# class Enum_Marital_Status(str, Enum):
+#     single = "single"
+#     in_relationship = "in_relationship"
+#     married = "married"
+#     divorced = "divorced"
 
 
 # We can use Field() to add validation

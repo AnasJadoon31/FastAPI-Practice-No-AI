@@ -93,9 +93,10 @@
 import sqlite3
 from typing import Any
 import json
+from contextlib import contextmanager
 
 teachers: list = []
-with open("FastAPI-Practice-No-AI/01_introduction/app/data.json") as json_file:
+with open("/home/anas/Development/Personal/fastapi_practice_no_ai/01_introduction/app/data.json") as json_file:
     data = json.load(json_file)
     teachers = data
 
@@ -104,26 +105,34 @@ for teacher in teachers:
 
 
 class Database:
+    # We don't need __init__ because we are using it in  a generator function
     def __init__(self):
+        self.create_connection()
+        self.create_table()
+        self.add_initial_data()
+    
+    def create_connection(self):
         self.conn = sqlite3.connect("database.db", check_same_thread=False)
         # This is required to get the keys as well in the response
         self.conn.row_factory = sqlite3.Row
         self.cur = self.conn.cursor()
 
+    def create_table(self):
         self.cur.execute("""
-            CREATE TABLE IF NOT EXISTS Teacher(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            age INTEGER,
-            experience_years INTEGER,
-            degree TEXT,
-            marital_status TEXT             
-            )
-        """)
-
+                    CREATE TABLE IF NOT EXISTS Teacher(
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT,
+                    age INTEGER,
+                    experience_years INTEGER,
+                    degree TEXT,
+                    marital_status TEXT             
+                    )
+                """)
+        
+    def add_initial_data(self):
         self.cur.execute("SELECT COUNT(*) FROM Teacher")
         row_count = self.cur.fetchone()[0]
-
+    
         if row_count == 0:
             print("Adding test data...")
             self.add_teachers_from_data()
@@ -280,3 +289,33 @@ class Database:
 
     def close(self):
         self.conn.close()
+
+
+
+
+
+##########################################################################
+##########################################################################
+
+
+# Now we will use context manager to manage the database because otherwise we would need to close the connection each time
+# context manager does it automatically for us as it works with 'with'
+
+# First we need to create a function which works over our Database class
+@contextmanager
+def manage_database():
+    db = Database()
+
+    db.create_connection()
+    db.create_table()
+    db.add_initial_data()
+
+    yield db
+
+    db.close()
+
+
+# And then we will use 'with' with this function
+
+with manage_database() as db:
+    print(db.get_teacher_all())

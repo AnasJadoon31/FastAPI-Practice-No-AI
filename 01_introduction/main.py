@@ -1,7 +1,10 @@
+from app.database.session import craete_table
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from scalar_fastapi import get_scalar_api_reference
 import uvicorn
 from app.db import Database
+from rich import print, panel
 
 # from typing import Any
 from app.schemas import (
@@ -13,7 +16,19 @@ from app.schemas import (
 )
 # from app.db import save, teachers
 
-app = FastAPI()
+
+# We use lifespan to use context manager within fastapi app, and it works with async (independently)
+
+@asynccontextmanager
+async def lifespan_handler(app: FastAPI):
+    print(panel.Panel("Server is starting", border_style="green"))
+    # We will use the table generator function from the session.py
+    craete_table()
+    yield
+    print(panel.Panel("Server is stopping", border_style="red"))
+
+
+app = FastAPI(lifespan=lifespan_handler)
 
 db = Database()
 
