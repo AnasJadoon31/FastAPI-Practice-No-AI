@@ -14,7 +14,7 @@
         "id": 2,
         "name": "Hamza",
         "age": 24,
-        "experience_years": 2,
+        "experience_years": 5,
         "degree": [
             "BS(SE)"
         ],
@@ -47,7 +47,7 @@
         "id": 5,
         "name": "Fatima",
         "age": 26,
-        "experience_years": 3,
+        "experience_years": 6,
         "degree": [
             "BS(CS)",
             "MS(Cyber)"
@@ -80,7 +80,7 @@
         "id": 8,
         "name": "Omar",
         "age": 23,
-        "experience_years": 1,
+        "experience_years": 8,
         "degree": [
             "BS(CS)"
         ],
@@ -90,7 +90,7 @@
         "id": 9,
         "name": "Khadija",
         "age": 28,
-        "experience_years": 4,
+        "experience_years": 7,
         "degree": [
             "BS(IT)",
             "MS(SE)"
@@ -112,7 +112,7 @@
         "id": 11,
         "name": "Mariam",
         "age": 27,
-        "experience_years": 4,
+        "experience_years": 9,
         "degree": [
             "BS(CS)"
         ],

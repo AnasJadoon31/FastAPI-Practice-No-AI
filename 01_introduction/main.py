@@ -1,3 +1,14 @@
+from rich.progress import TimeElapsedColumn
+from app.database.models import ModelTeacherUpdate
+from sqlalchemy import asc
+from sqlalchemy import desc
+from app.database.session import SessionDep
+from typing import Annotated
+from sqlalchemy import select
+from app.database.models import Teacher
+from app.database.session import get_session
+from fastapi import Depends
+from sqlmodel import Session
 from app.database.session import craete_table
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
@@ -8,7 +19,7 @@ from rich import print, panel
 
 # from typing import Any
 from app.schemas import (
-    TeacherAdd,
+    # TeacherAdd,
     TeacherDelete,
     TeacherGet,
     TeacherPatch,
@@ -18,6 +29,7 @@ from app.schemas import (
 
 
 # We use lifespan to use context manager within fastapi app, and it works with async (independently)
+
 
 @asynccontextmanager
 async def lifespan_handler(app: FastAPI):
@@ -146,17 +158,31 @@ db = Database()
 @app.get("/teachers")
 # If we add an argument to the function and that is not a path parimiter, it automatically becomes a query parameter
 # which can be accessed like /teachers?sort:asc
-def get_teachers(sort: str | None = None):
+# def get_teachers(sort: str | None = None, session: Session = Depends(get_session)):
+
+# We will use annotation to make the Depends statement short hand
+def get_teachers(session: SessionDep, sort: str | None = None):
+
     teacher_names = []
 
-    teacher_names = db.get_teacher_all()
+    # teacher_names = db.get_teacher_all()
+
+    # Using session for getting data from Teacher table
+    teacher_names = session.scalars(select(Teacher)).all()
+
+    print("teacher names", teacher_names)
 
     if sort == "asc":
-        sorted_teacher_names = sorted(teacher_names, key= lambda t: t["name"])
+        # sorted_teacher_names = sorted(teacher_names, key= lambda t: t.name)
+        sorted_teacher_names = session.scalars(
+            select(Teacher.name).order_by(asc(Teacher.name))
+        ).all()
         return sorted_teacher_names
 
     elif sort == "desc":
-        sorted_teacher_names = sorted(teacher_names, key=lambda t: t["name"], reverse=True)
+        sorted_teacher_names = session.scalars(
+            select(Teacher.name).order_by(desc(Teacher.name))
+        ).all()
         return sorted_teacher_names
 
     else:
@@ -166,10 +192,12 @@ def get_teachers(sort: str | None = None):
 # We can validate response by adding response_model
 @app.get("/teachers/{teacher_id}", response_model=TeacherGet)
 # Adding type hinting will automatically manages the validation for dynamic endpoints, as well as for the return types
-def get_teacher(teacher_id: int):
+def get_teacher(teacher_id: int, session: SessionDep):
     # teacher = search_teacher(teacher_id)
 
-    teacher = db.get_teacher(teacher_id)
+    # teacher = db.get_teacher(teacher_id)
+
+    teacher = session.get(Teacher, teacher_id)
 
     if teacher is None:
         raise HTTPException(
@@ -218,7 +246,8 @@ def get_teacher(teacher_id: int):
 
 # Here we will use the pydantic model to get the data
 @app.post("/teachers")
-def add_teacher(teacher: TeacherAdd):
+# def add_teacher(teacher: TeacherAdd, session: SessionDep):
+def add_teacher(teacher: Teacher, session: SessionDep):
     # teacher_id = (teachers[len(teachers) - 1]["id"]) + 1
 
     # teachers.append(
@@ -234,15 +263,27 @@ def add_teacher(teacher: TeacherAdd):
     # save()
     # return teachers[len(teachers) - 1]
 
-    result = db.add_teacher(
-        teacher.name,
-        teacher.age,
-        teacher.experience_years,
-        teacher.degree,
-        teacher.marital_status,
-    )
+    # result = db.add_teacher(
+    #     teacher.name,
+    #     teacher.age,
+    #     teacher.experience_years,
+    #     teacher.degree,
+    # teacher.marital_status,
+    # )
 
-    return result
+    # return result
+
+    # Adding teacher using session
+
+    # new_teacher = Teacher(
+    #     **teacher.model_dump()
+    # )
+
+    session.add(teacher)
+    session.commit()
+    session.refresh(teacher)
+
+    return teacher
 
 
 # Put method is used to completely replace an entry from the data with the new data
@@ -278,8 +319,8 @@ def add_teacher(teacher: TeacherAdd):
 
 
 # Using pydantic model for updating
-@app.put("/teachers/{teacher_id}", response_model=TeacherUpdate)
-def update_teacher(teacher_id: int, data: TeacherUpdate):
+@app.put("/teachers/{teacher_id}", response_model=Teacher)
+def update_teacher(teacher_id: int, data: TeacherUpdate, session: SessionDep):
     # for index, teacher in enumerate(teachers):
     #     if teacher["id"] == teacher_id:
     #         teacher.update(data.model_dump())
@@ -290,21 +331,28 @@ def update_teacher(teacher_id: int, data: TeacherUpdate):
     #     status_code=404, detail=f"Teacher with id {teacher_id} not found"
     # )
 
-    db.update_teacher(
-        teacher_id,
-        data.name,
-        data.age,
-        data.experience_years,
-        data.degree,
-        data.marital_status,
-    )
+    # db.update_teacher(
+    #     teacher_id,
+    #     data.name,
+    #     data.age,
+    #     data.experience_years,
+    #     data.degree,
+    #     data.marital_status,
+    # )
 
-    return db.get_teacher(teacher_id)
+    # return db.get_teacher(teacher_id)
+    db_teacher= session.get(Teacher, teacher_id)
+    db_teacher.sqlmodel_update(data.model_dump()) # It will take data without ** because it can process pydantic models directly
+    session.add(db_teacher)
+    session.commit()
+    session.refresh(db_teacher)
+
+    return db_teacher
 
 
 # We use patch method if we want to update only some specific fields, not the whole entry
-@app.patch("/teachers/{teacher_id}", response_model=TeacherPatch)
-def patch_teacher(teacher_id: int, data: TeacherPatch):
+@app.patch("/teachers/{teacher_id}", response_model=Teacher)
+def patch_teacher(teacher_id: int, data: ModelTeacherUpdate, session: SessionDep):
     # if name:
     #     teachers[teacher_id]["name"] = name
     # if age:
@@ -324,17 +372,26 @@ def patch_teacher(teacher_id: int, data: TeacherPatch):
     #         save()
     #         return teachers[index]
 
-    if db.get_teacher(teacher_id) is None:
-        raise HTTPException(
-            status_code=404, detail=f"Teacher with id {teacher_id} not found"
-        )
-    teacher_data = data.model_dump(exclude_unset=True)
-    db.patch_teacher(teacher_id, **teacher_data)
-    return db.get_teacher(teacher_id)
+    # if db.get_teacher(teacher_id) is None:
+    #     raise HTTPException(
+    #         status_code=404, detail=f"Teacher with id {teacher_id} not found"
+    #     )
+    # teacher_data = data.model_dump(exclude_unset=True)
+    # db.patch_teacher(teacher_id, **teacher_data)
+    # return db.get_teacher(teacher_id)
+
+    db_teacher = session.get(Teacher, teacher_id)
+    db_teacher.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(db_teacher)
+    session.commit()
+    session.refresh(db_teacher)
+
+    return db_teacher
+
 
 
 @app.delete("/teachers/{teacher_id}", response_model=TeacherDelete)
-def delete_teacher(teacher_id: int):
+def delete_teacher(teacher_id: int, session: SessionDep):
     # for index, teacher in enumerate(teachers):
     #     if teacher["id"] == teacher_id:
     #         teachers.pop(index)
@@ -343,13 +400,15 @@ def delete_teacher(teacher_id: int):
     # raise HTTPException(
     #     status_code=400, detail=f"Teacher with id {teacher_id} not found"
     # )
-    if db.get_teacher(teacher_id) is None:
+    db_teacher = session.get(Teacher, teacher_id)
+    if db_teacher is None:
         raise HTTPException(
             status_code=404, detail=f"Teacher with id {teacher_id} not found"
         )
-
-    result = db.delete_teacher(teacher_id)
-    return {"success": result}
+    session.delete(db_teacher)
+    session.commit()
+    # result = db.delete_teacher(teacher_id)
+    return {"success": "True"}
 
 
 @app.get("/scalar")
@@ -359,3 +418,19 @@ def get_scalar():
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+
+
+##############################################################
+##############################################################
+
+
+# Annotation
+
+# This is how we can annotate a variable
+salary: Annotated[float, "pkr", "usd"]
+
+# And this is how we can create an annoted data type
+
+Currency = Annotated[float, "pkr", "usd"]
+
+foreign_currency: Currency = 100
