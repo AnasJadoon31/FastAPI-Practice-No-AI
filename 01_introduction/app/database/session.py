@@ -2,8 +2,8 @@
 # sqlalchemy
 
 # We use Session for dependency injections so that each function has its own session and session only gets created when needed
-from fastapi import Depends
-from typing import Annotated
+# from fastapi import Depends
+# from typing import Annotated
 # from .models import Teacher
 from sqlmodel import SQLModel # Session
 # from sqlalchemy import create_engine
@@ -41,4 +41,5 @@ async def get_session():
     async with async_session_maker() as session:
         yield session
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+# Shifted to dependencies.py
+# SessionDep = Annotated[AsyncSession, Depends(get_session)]
