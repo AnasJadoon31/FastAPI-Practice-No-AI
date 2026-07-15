@@ -24,7 +24,7 @@ def server():
     print(f"Time Taken: {end - start}")
 
 
-server()
+# server()
 
 
 # This is asynchronous code, where each function runs independently
@@ -48,12 +48,23 @@ async def server_async():
 
     start = time.perf_counter()
 
-    requests = [asyncio.create_task(endpoint_async(route)) for route in tests]
+    # requests = [asyncio.create_task(endpoint_async(route)) for route in tests]
 
-    done, pending = await asyncio.wait(requests)
+    # We can achieve same create_task using task_group
 
-    for task in done:
-        print("Result:", task.result())
+    async with asyncio.TaskGroup() as task_group:
+        results = [task_group.create_task(endpoint_async(route)) for route in tests]
+
+
+    # print (results) outside with because this will give us guaranteed completed tasks
+    
+    for task in results:
+        print(task.result())
+
+    # done, pending = await asyncio.wait(requests)
+
+    # for task in done:
+    #     print("Result:", task.result())
 
     end = time.perf_counter()
 

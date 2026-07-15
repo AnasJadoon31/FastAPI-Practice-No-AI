@@ -1,36 +1,35 @@
-from rich.progress import TimeElapsedColumn
-from app.database.models import ModelTeacherUpdate
-from sqlalchemy import asc
-from sqlalchemy import desc
-from app.database.session import SessionDep
-from typing import Annotated
-from sqlalchemy import select
-from app.database.models import Teacher
-from app.database.session import get_session
-from fastapi import Depends
-from sqlmodel import Session
+# from rich.progress import TimeElapsedColumn
+# from app.database.models import ModelTeacherUpdate
+# from sqlalchemy import asc
+# from sqlalchemy import desc
+# from app.database.session import SessionDep
+# from typing import Annotated
+# from sqlalchemy import select
+# from app.database.models import Teacher
+# from app.database.session import get_session
+# from fastapi import Depends
+# from sqlmodel import Session
+from app.api.router import router
 from app.database.session import craete_table
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI #, HTTPException
 from scalar_fastapi import get_scalar_api_reference
 import uvicorn
 from app.db import Database
 from rich import print, panel
 
 # from typing import Any
-from app.schemas import (
-    # TeacherAdd,
-    TeacherDelete,
-    TeacherGet,
-    TeacherPatch,
-    TeacherUpdate,
-)
+# from app.schemas import (
+#     # TeacherAdd,
+#     TeacherDelete,
+#     TeacherGet,
+#     # TeacherPatch,
+#     TeacherUpdate,
+# )
 # from app.db import save, teachers
 
 
 # We use lifespan to use context manager within fastapi app, and it works with async (independently)
-
-
 @asynccontextmanager
 async def lifespan_handler(app: FastAPI):
     print(panel.Panel("Server is starting", border_style="green"))
@@ -43,6 +42,23 @@ async def lifespan_handler(app: FastAPI):
 app = FastAPI(lifespan=lifespan_handler)
 
 db = Database()
+
+
+app.include_router(router)
+
+@app.get("/scalar")
+def get_scalar():
+    return get_scalar_api_reference(openapi_url=app.openapi_url, title="Documentation")
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+
+
+#####################################################################
+#####################################################################
+#### WE COMMENTED OUT THE CODE BELOW BECAUSE WE ARE USING ROUTER ####
+#####################################################################
+#####################################################################
 
 # Data is now in data.json and is getting loaded using db.py
 # teachers: list[dict] = [
@@ -155,56 +171,56 @@ db = Database()
 
 # As we are using path parameters in the next route, we need to define the static route before the dynamic one so that interpreter reads
 # the static one without giving the error when both predecessing paths are same
-@app.get("/teachers")
+# @app.get("/teachers")
 # If we add an argument to the function and that is not a path parimiter, it automatically becomes a query parameter
 # which can be accessed like /teachers?sort:asc
 # def get_teachers(sort: str | None = None, session: Session = Depends(get_session)):
 
 # We will use annotation to make the Depends statement short hand
-def get_teachers(session: SessionDep, sort: str | None = None):
+# async def get_teachers(session: SessionDep, sort: str | None = None):
 
-    teacher_names = []
+    # teacher_names = []
 
     # teacher_names = db.get_teacher_all()
 
     # Using session for getting data from Teacher table
-    teacher_names = session.scalars(select(Teacher)).all()
+    # teacher_names = await session.scalars(select(Teacher)).all()
 
-    print("teacher names", teacher_names)
+    # print("teacher names", teacher_names)
 
-    if sort == "asc":
-        # sorted_teacher_names = sorted(teacher_names, key= lambda t: t.name)
-        sorted_teacher_names = session.scalars(
-            select(Teacher.name).order_by(asc(Teacher.name))
-        ).all()
-        return sorted_teacher_names
+    # if sort == "asc":
+    #     # sorted_teacher_names = sorted(teacher_names, key= lambda t: t.name)
+    #     sorted_teacher_names = await session.scalars(
+    #         select(Teacher.name).order_by(asc(Teacher.name))
+    #     ).all()
+    #     return sorted_teacher_names
 
-    elif sort == "desc":
-        sorted_teacher_names = session.scalars(
-            select(Teacher.name).order_by(desc(Teacher.name))
-        ).all()
-        return sorted_teacher_names
+    # elif sort == "desc":
+    #     sorted_teacher_names = await session.scalars(
+    #         select(Teacher.name).order_by(desc(Teacher.name))
+    #     ).all()
+    #     return sorted_teacher_names
 
-    else:
-        return teacher_names
+    # else:
+    #     return teacher_names
 
 
 # We can validate response by adding response_model
-@app.get("/teachers/{teacher_id}", response_model=TeacherGet)
+# @app.get("/teachers/{teacher_id}", response_model=TeacherGet)
 # Adding type hinting will automatically manages the validation for dynamic endpoints, as well as for the return types
-def get_teacher(teacher_id: int, session: SessionDep):
+# async def get_teacher(teacher_id: int, session: SessionDep):
     # teacher = search_teacher(teacher_id)
 
     # teacher = db.get_teacher(teacher_id)
 
-    teacher = session.get(Teacher, teacher_id)
+    # teacher = await session.get(Teacher, teacher_id)
 
-    if teacher is None:
-        raise HTTPException(
-            status_code=404, detail=f"Teacher with id {teacher_id} not found"
-        )
+    # if teacher is None:
+    #     raise HTTPException(
+    #         status_code=404, detail=f"Teacher with id {teacher_id} not found"
+    #     )
 
-    return teacher
+    # return teacher
 
 
 # @app.post("/teachers")
@@ -245,9 +261,9 @@ def get_teacher(teacher_id: int, session: SessionDep):
 
 
 # Here we will use the pydantic model to get the data
-@app.post("/teachers")
+# @app.post("/teachers")
 # def add_teacher(teacher: TeacherAdd, session: SessionDep):
-def add_teacher(teacher: Teacher, session: SessionDep):
+# async def add_teacher(teacher: Teacher, session: SessionDep):
     # teacher_id = (teachers[len(teachers) - 1]["id"]) + 1
 
     # teachers.append(
@@ -279,11 +295,11 @@ def add_teacher(teacher: Teacher, session: SessionDep):
     #     **teacher.model_dump()
     # )
 
-    session.add(teacher)
-    session.commit()
-    session.refresh(teacher)
+    # session.add(teacher)
+    # await session.commit()
+    # await session.refresh(teacher)
 
-    return teacher
+    # return teacher
 
 
 # Put method is used to completely replace an entry from the data with the new data
@@ -319,8 +335,8 @@ def add_teacher(teacher: Teacher, session: SessionDep):
 
 
 # Using pydantic model for updating
-@app.put("/teachers/{teacher_id}", response_model=Teacher)
-def update_teacher(teacher_id: int, data: TeacherUpdate, session: SessionDep):
+# @app.put("/teachers/{teacher_id}", response_model=Teacher)
+# async def update_teacher(teacher_id: int, data: TeacherUpdate, session: SessionDep):
     # for index, teacher in enumerate(teachers):
     #     if teacher["id"] == teacher_id:
     #         teacher.update(data.model_dump())
@@ -341,18 +357,18 @@ def update_teacher(teacher_id: int, data: TeacherUpdate, session: SessionDep):
     # )
 
     # return db.get_teacher(teacher_id)
-    db_teacher= session.get(Teacher, teacher_id)
-    db_teacher.sqlmodel_update(data.model_dump()) # It will take data without ** because it can process pydantic models directly
-    session.add(db_teacher)
-    session.commit()
-    session.refresh(db_teacher)
+    # db_teacher= await session.get(Teacher, teacher_id)
+    # db_teacher.sqlmodel_update(data.model_dump()) # It will take data without ** because it can process pydantic models directly
+    # session.add(db_teacher)
+    # await session.commit()
+    # await session.refresh(db_teacher)
 
-    return db_teacher
+    # return db_teacher
 
 
 # We use patch method if we want to update only some specific fields, not the whole entry
-@app.patch("/teachers/{teacher_id}", response_model=Teacher)
-def patch_teacher(teacher_id: int, data: ModelTeacherUpdate, session: SessionDep):
+# @app.patch("/teachers/{teacher_id}", response_model=Teacher)
+# async def patch_teacher(teacher_id: int, data: ModelTeacherUpdate, session: SessionDep):
     # if name:
     #     teachers[teacher_id]["name"] = name
     # if age:
@@ -380,18 +396,18 @@ def patch_teacher(teacher_id: int, data: ModelTeacherUpdate, session: SessionDep
     # db.patch_teacher(teacher_id, **teacher_data)
     # return db.get_teacher(teacher_id)
 
-    db_teacher = session.get(Teacher, teacher_id)
-    db_teacher.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(db_teacher)
-    session.commit()
-    session.refresh(db_teacher)
+    # db_teacher = await session.get(Teacher, teacher_id)
+    # db_teacher.sqlmodel_update(data.model_dump(exclude_unset=True))
+    # session.add(db_teacher)
+    # await session.commit()
+    # await session.refresh(db_teacher)
 
-    return db_teacher
+    # return db_teacher
 
 
 
-@app.delete("/teachers/{teacher_id}", response_model=TeacherDelete)
-def delete_teacher(teacher_id: int, session: SessionDep):
+# @app.delete("/teachers/{teacher_id}", response_model=TeacherDelete)
+# async def delete_teacher(teacher_id: int, session: SessionDep):
     # for index, teacher in enumerate(teachers):
     #     if teacher["id"] == teacher_id:
     #         teachers.pop(index)
@@ -399,25 +415,19 @@ def delete_teacher(teacher_id: int, session: SessionDep):
     #         return {"success": True}
     # raise HTTPException(
     #     status_code=400, detail=f"Teacher with id {teacher_id} not found"
-    # )
-    db_teacher = session.get(Teacher, teacher_id)
-    if db_teacher is None:
-        raise HTTPException(
-            status_code=404, detail=f"Teacher with id {teacher_id} not found"
-        )
-    session.delete(db_teacher)
-    session.commit()
-    # result = db.delete_teacher(teacher_id)
-    return {"success": "True"}
+    # # )
+    # db_teacher = session.get(Teacher, teacher_id)
+    # if db_teacher is None:
+    #     raise HTTPException(
+    #         status_code=404, detail=f"Teacher with id {teacher_id} not found"
+    #     )
+    # await session.delete(db_teacher)
+    # await session.commit()
+    # # result = db.delete_teacher(teacher_id)
+    # return {"success": "True"}
 
 
-@app.get("/scalar")
-def get_scalar():
-    return get_scalar_api_reference(openapi_url=app.openapi_url, title="Documentation")
 
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
 
 
 ##############################################################
@@ -427,10 +437,10 @@ if __name__ == "__main__":
 # Annotation
 
 # This is how we can annotate a variable
-salary: Annotated[float, "pkr", "usd"]
+# salary: Annotated[float, "pkr", "usd"]
 
-# And this is how we can create an annoted data type
+# # And this is how we can create an annoted data type
 
-Currency = Annotated[float, "pkr", "usd"]
+# Currency = Annotated[float, "pkr", "usd"]
 
-foreign_currency: Currency = 100
+# foreign_currency: Currency = 100
