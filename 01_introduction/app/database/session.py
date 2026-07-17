@@ -14,7 +14,7 @@ from app.config import settings
 from sqlalchemy.orm import sessionmaker
 
 engine = create_async_engine(
-    url=settings.POSTGRES_HOST,
+    url=settings.DATABASE_URL,
     echo=True,
     # connect_args={"check_same_thread": False}
 )

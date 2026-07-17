@@ -10,7 +10,7 @@
 # from fastapi import Depends
 # from sqlmodel import Session
 from app.api.router import router
-from app.database.session import craete_table
+from app.database.session import create_table
 from contextlib import asynccontextmanager
 from fastapi import FastAPI #, HTTPException
 from scalar_fastapi import get_scalar_api_reference
@@ -34,7 +34,7 @@ from rich import print, panel
 async def lifespan_handler(app: FastAPI):
     print(panel.Panel("Server is starting", border_style="green"))
     # We will use the table generator function from the session.py
-    craete_table()
+    await create_table()
     yield
     print(panel.Panel("Server is stopping", border_style="red"))
 

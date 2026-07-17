@@ -34,7 +34,9 @@ class ModelTeacherUpdate(SQLModel):
         default=None, description="Name for teacher", max_length=50, min_length=3
     )
     age: int | None = Field(
-        default=None, description="Age must be less than or equal to 65", le=65
+        default=None,
+        description="Age must be less than or equal to 65",
+        le=65,
     )
     experience_years: int | None = Field(
         default=None,
